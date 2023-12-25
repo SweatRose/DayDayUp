@@ -42,6 +42,14 @@ def push_to_enterprise_wechat(docx_file_path, agent_id, corp_id, corp_secret, me
     # 需要使用到企业微信的开发者权限，包括 agent_id、corp_id 和 corp_secret
     # 以下代码仅作为示例，实际使用时需要将以下代码与企业微信的接口进行对接
 
+    # 上传临时素材并获取media_id
+    def upload_temp_media(file_path):
+        upload_url = "https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={}&type=image".format(get_access_token(corp_id, corp_secret))
+        files = {'media': open(file_path, 'rb')}
+        response = requests.post(upload_url, files=files)
+        media_id = response.json().get('media_id')
+        return media_id
+
     #获取content内容 来自最新的word内容
     content = read_docx_content(docx_file_path)
     dt = datetime.now()
@@ -49,6 +57,8 @@ def push_to_enterprise_wechat(docx_file_path, agent_id, corp_id, corp_secret, me
     time = dt.strftime('%H:%M:%S')
     file_name = os.path.basename(docx_file_path).split('.')[0]
     push_url = "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={}".format(get_access_token(corp_id, corp_secret))
+    #修复封面图片三天过去，即临时素材
+    thumb_media_id = upload_temp_media('temp.jpg')  # 上传temp.jpg并获取media_id
     data = {
         'touser': '@all',
         'agentid': agent_id,
@@ -58,7 +68,8 @@ def push_to_enterprise_wechat(docx_file_path, agent_id, corp_id, corp_secret, me
                 # 'title': f'每日一练 - {file_name}- {date}',
                 'title': f'每日一练 - {file_name}',
                 #写不动了  直接写死一张图片(三天一更新 暂时没想到好办法)
-                'thumb_media_id': '3Dmx7S_K6YtJ8qIGKE9MrxxyR5k8PsabPR7ZIf4j1FP4_5A0-TLabKkZ5sGmvz38L',  # 使用上传文件后得到的 media_id 作为缩略图
+                # 'thumb_media_id': '3Dmx7S_K6YtJ8qIGKE9MrxxyR5k8PsabPR7ZIf4j1FP4_5A0-TLabKkZ5sGmvz38L',  # 使用上传文件后得到的 media_id 作为缩略图
+                'thumb_media_id': thumb_media_id,  # 使用上传文件后得到的 media_id 作为缩略图
                 'author': 'Tonyz',
                 'digest': f'{date}-{time} - 每日一练推送',
                 'content': content
